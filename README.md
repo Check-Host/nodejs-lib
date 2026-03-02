@@ -1,14 +1,18 @@
 # Check-Host API Node.js Library
 
-A modern, fast, and feature-complete Node.js wrapper for the [Check-Host.cc API](https://docs.check-host.cc/).
+A lightweight, lightning-fast, and feature-complete Node.js wrapper for the Check-Host.cc API.
+
+Seamlessly integrate global network diagnostics into your backend. Perform remote Ping, TCP, UDP, DNS, and HTTP checks from multiple worldwide locations—straight from your JavaScript or TypeScript application. Checks from 60+ locations worldwide.
 
 ## Features
 
-- Built purely with the native Node.js 18+ `fetch` API. No external dependencies (`axios`, `node-fetch`, etc.) are needed!
-- Uses `POST` for all active monitoring endpoints (Ping, DNS, TCP, UDP, HTTP, MTR) ensuring URL encoding issues do not occur.
-- Modular design: every endpoint strategy lives in an isolated file for cleaner code tracking.
-- Native **ES Modules** support (`import` / `export`).
-- API Key auto-injection: Configure your API key once and let the core handle the payloads.
+- **Zero Dependencies:** Built purely on the native Node.js 18+ fetch API. No axios, no node-fetch, zero package bloat.
+
+- **Bulletproof Payloads:** Strictly utilizes POST requests for all active monitoring endpoints. This completely eliminates nasty URL-encoding issues with complex hostnames or custom UDP payloads.
+
+- **Modern & Modular:** Native ES Modules (import / export) support. Every endpoint strategy lives in an isolated file, ensuring a clean architecture and easy debugging.
+
+- **Smart Authentication:** API Key auto-injection. Configure your key once during initialization, and the core SDK seamlessly handles all authentication payloads under the hood.
 
 ## Requirements
 
@@ -26,7 +30,9 @@ import CheckHost from './nodejs-lib/index.js';
 
 // Initialize the client. The API Key is optional.
 // Without an API key, standard public rate limits apply.
-const checkHost = new CheckHost({ apikey: 'YOUR_API_KEY_HERE' }); // Or leave empty: new CheckHost()
+//const checkHost = new CheckHost({ apikey: 'YOUR_API_KEY_HERE' });
+// Or leave empty: new CheckHost()
+const checkHost = new CheckHost();
 ```
 
 ---
@@ -118,7 +124,7 @@ const tcpMax = await checkHost.tcp('1.1.1.1', 80, {
 ```
 
 #### UDP
-Sends UDP packets to a specified target and port.
+Sends UDP packets to a specified target and port. We have for most used ports a default payload. If you are unsure about the payload, leave it empty and we will use the default payload.
 ```javascript
 // Minimal Example (Target, Port)
 const udpMin = await checkHost.udp('1.1.1.1', 53);
@@ -166,7 +172,7 @@ const mtrMax = await checkHost.mtr('1.1.1.1', {
 ### Fetching Results
 
 #### Report
-Fetches the compiled report and real-time statuses from a previously initiated monitoring check (Ping, TCP, HTTP, etc.) using its unique `uuid`. Wait 1-2 seconds after starting a check before polling.
+Fetches the compiled report and real-time statuses from a previously initiated monitoring check (Ping, TCP, HTTP, etc.) using its unique `uuid`. Wait 1-2 seconds after starting a check before polling. Longer checks with multiple repeats take one check per second and can be requested multiple times.
 ```javascript
 // The check UUID is returned by any monitoring method above
 const taskUuid = 'c0b4b0e3-aed7-4ae2-9f53-7bac879697cb';
