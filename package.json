@@ -1,6 +1,6 @@
 {
   "name": "@check-hostcc/check-host-api",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
@@ -20,7 +20,7 @@
   "bugs": {
     "url": "https://github.com/Check-Host/nodejs-lib/issues"
   },
-  "homepage": "https://github.com/Check-Host/nodejs-lib#readme",
+  "homepage": "https://check-host.cc",
   "engines": {
     "node": ">=18.0.0"
   }

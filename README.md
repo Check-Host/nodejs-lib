@@ -21,7 +21,10 @@ Seamlessly integrate global network diagnostics into your backend. Perform remot
 
 ## Installation
 
-Ensure you have Node.js 18+ installed. You can include this repository directly.
+Ensure you have Node.js 18+ installed. You can install the package directly from npm:
+```bash
+npm i @check-hostcc/check-host-api
+```
 
 ## Quickstart
 
@@ -105,7 +108,7 @@ const dnsMin = await checkHost.dns('check-host.cc');
 // Max Example (With options - TXT Record)
 const dnsMax = await checkHost.dns('check-host.cc', {
     querymethod: 'TXT', // A, AAAA, MX, TXT, SRV, etc.
-    region: ['US', 'PL']
+    region: ['US', 'DE']
 });
 ```
 
@@ -117,14 +120,14 @@ const tcpMin = await checkHost.tcp('1.1.1.1', 443);
 
 // Max Example (With options)
 const tcpMax = await checkHost.tcp('1.1.1.1', 80, {
-    region: ['DE', 'JP'],
+    region: ['DE', 'NL'],
     repeatchecks: 3,
     timeout: 10
 });
 ```
 
 #### UDP
-Sends UDP packets to a specified target and port. We have for most used ports a default payload. If you are unsure about the payload, leave it empty and we will use the default payload.
+Sends UDP packets to a specified target and port. We have for most used ports the right payload. If you are unsure about the payload, leave it empty and we will use the default payload.
 ```javascript
 // Minimal Example (Target, Port)
 const udpMin = await checkHost.udp('1.1.1.1', 53);
@@ -163,7 +166,7 @@ const mtrMax = await checkHost.mtr('1.1.1.1', {
     repeatchecks: 15,
     forceIPversion: 4,     // 4 or 6
     forceProtocol: 'TCP',  // default is ICMP
-    region: ['EU', 'US']
+    region: ['DE', 'US']
 });
 ```
 
