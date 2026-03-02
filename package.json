@@ -1,17 +1,31 @@
 {
   "name": "@check-hostcc/check-host-api",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
-  "description": "Node.js wrapper for the check-host.cc API",
+  "description": "A lightweight, zero-dependency Node.js SDK for the Check-Host.cc API. Perform global Ping, TCP, UDP, DNS, MTR, and HTTP diagnostics.",
   "main": "index.js",
   "type": "module",
   "scripts": {
     "test": "node test_run.js"
   },
-  "author": "",
+  "keywords": [
+    "nodejs",
+    "api-wrapper",
+    "sdk",
+    "monitoring",
+    "network-tools",
+    "uptime-monitoring",
+    "ping",
+    "dns-lookup",
+    "traceroute",
+    "mtr",
+    "network-diagnostics",
+    "check-host"
+  ],
+  "author": "Check-Host",
   "license": "ISC",
   "repository": {
     "type": "git",
