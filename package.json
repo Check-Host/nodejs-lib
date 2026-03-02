@@ -1,6 +1,10 @@
 {
-  "name": "check-host-api",
+  "name": "@check-hostcc/check-host-api",
   "version": "1.0.0",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "description": "Node.js wrapper for the check-host.cc API",
   "main": "index.js",
   "type": "module",
