@@ -1,6 +1,6 @@
 # Check-Host API Node.js Library
 
-A lightweight, lightning-fast, and feature-complete Node.js wrapper for the Check-Host.cc API.
+A lightweight, lightning-fast, and feature-complete Node.js wrapper for the [Check-Host.cc](https://check-host.cc) API. Full documentation is available at [docs.check-host.cc](https://docs.check-host.cc).
 
 Seamlessly integrate global network diagnostics into your backend. Perform remote Ping, TCP, UDP, DNS, and HTTP checks from multiple worldwide locations—straight from your JavaScript or TypeScript application. Checks from 60+ locations worldwide.
 
@@ -26,7 +26,7 @@ Ensure you have Node.js 18+ installed. You can include this repository directly.
 ## Quickstart
 
 ```javascript
-import CheckHost from 'check-host-api';
+import CheckHost from '@check-hostcc/check-host-api';
 
 // Initialize the client. The API Key is optional.
 // Without an API key, standard public rate limits apply.
