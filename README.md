@@ -26,7 +26,7 @@ Ensure you have Node.js 18+ installed. You can include this repository directly.
 ## Quickstart
 
 ```javascript
-import CheckHost from './nodejs-lib/index.js';
+import CheckHost from 'check-host-api';
 
 // Initialize the client. The API Key is optional.
 // Without an API key, standard public rate limits apply.
