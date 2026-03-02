@@ -7,69 +7,173 @@ A modern, fast, and feature-complete Node.js wrapper for the [Check-Host.cc API]
 - Built purely with the native Node.js 18+ `fetch` API. No external dependencies (`axios`, `node-fetch`, etc.) are needed!
 - Uses `POST` for all active monitoring endpoints (Ping, DNS, TCP, UDP, HTTP, MTR) ensuring URL encoding issues do not occur.
 - Modular design: every endpoint strategy lives in an isolated file for cleaner code tracking.
+- Native **ES Modules** support (`import` / `export`).
 - API Key auto-injection: Configure your API key once and let the core handle the payloads.
 
 ## Requirements
 
 - **Node.js**: v18.0.0 or higher.
+- `package.json` with `"type": "module"` or using `.mjs` extension.
 
 ## Installation
 
-Since this library doesn't depend on external modules, simply include it in your project.
+Ensure you have Node.js 18+ installed. You can include this repository directly.
 
-## Usage
+## Quickstart
 
 ```javascript
-const CheckHost = require('./nodejs-lib/index');
+import CheckHost from './nodejs-lib/index.js';
 
 // Initialize the client. The API Key is optional.
 // Without an API key, standard public rate limits apply.
 const checkHost = new CheckHost({ apikey: 'YOUR_API_KEY_HERE' }); // Or leave empty: new CheckHost()
-
-async function runCheck() {
-  try {
-    // 1. Fetch available nodes globally (GET)
-    const locations = await checkHost.locations();
-    console.log('Available Locations:', locations);
-
-    // 2. Perform a Ping check on a host (POST)
-    const pingTask = await checkHost.ping('8.8.8.8', {
-      region: ['US', 'EU'], // Filter nodes
-      repeatchecks: 5       // Send 5 packets
-    });
-    console.log('Ping check initiated with UUID:', pingTask.uuid);
-
-    // 3. Retrieve the results incrementally (GET)
-    // Note: It's recommended to query this after a short delay
-    const results = await checkHost.report(pingTask.uuid);
-    console.log('Report Results:', results);
-
-  } catch (error) {
-    console.error('An error occurred:', error.message);
-  }
-}
-
-runCheck();
 ```
 
-## Available Methods
+---
 
-Most monitoring endpoints accept standard Check-Host options such as `region` and `repeatchecks`.
+## Complete API Reference & Examples
 
-### active Monitoring (POST)
-- `api.info(target)`
-- `api.whois(target)`
-- `api.ping(target, options)`
-- `api.dns(target, options)`
-- `api.tcp(target, port, options)`
-- `api.udp(target, port, options)`
-- `api.http(target, options)`
-- `api.mtr(target, options)`
+This library supports both minimal invocations and detailed, options-rich requests for every endpoint.
 
-### Data Retrieval (GET)
-- `api.locations()`
-- `api.report(uuid)`
-- `api.myip()`
+### Common Options Used in Examples
+- `region`: Array of Nodes or ISO Country Codes (e.g. `['DE', 'NL']`) or Continents (e.g. `['EU']`).
+- `repeatchecks`: Number of repeated probes to perform per node for higher accuracy (Live Check).
+- `timeout`: Connection timeout threshold in seconds (Currently disabled on Check-host backend, but supported).
+
+---
+
+### Information & Utilities
+
+#### Get My IP
+Returns the requesting client's public IPv4 or IPv6 address.
+```javascript
+const ip = await checkHost.myip();
+```
+
+#### Get Locations
+Fetches a dynamic list of all currently active monitoring nodes across the globe.
+```javascript
+const nodes = await checkHost.locations();
+```
+
+#### Host Info (GeoIP/ASN)
+Retrieves detailed geolocation data, ISP information, and ASN details.
+```javascript
+// Minimal Example
+const info = await checkHost.info('check-host.cc');
+```
+
+#### WHOIS Lookup
+Performs a WHOIS registry lookup.
+```javascript
+// Minimal Example
+const whois = await checkHost.whois('check-host.cc');
+```
+
+---
+
+### Active Monitoring (POST Tasks)
+
+Monitoring endpoints initiate tasks asynchronously and return a `Task Object` containing a `uuid`. Use the `report()` method (documented below) to fetch the actual results.
+
+#### Ping
+Dispatches ICMP echo requests to the target from global nodes.
+```javascript
+// Minimal Example
+const pingMin = await checkHost.ping('8.8.8.8');
+
+// Max Example (With options)
+const pingMax = await checkHost.ping('8.8.8.8', {
+    region: ['DE', 'NL'],
+    repeatchecks: 5,
+    timeout: 5
+});
+```
+
+#### DNS
+Queries global nameservers for specific DNS records.
+```javascript
+// Minimal Example
+const dnsMin = await checkHost.dns('check-host.cc');
+
+// Max Example (With options - TXT Record)
+const dnsMax = await checkHost.dns('check-host.cc', {
+    querymethod: 'TXT', // A, AAAA, MX, TXT, SRV, etc.
+    region: ['US', 'PL']
+});
+```
+
+#### TCP
+Attempts to establish a 3-way TCP handshake on a specific destination port.
+```javascript
+// Minimal Example (Target, Port)
+const tcpMin = await checkHost.tcp('1.1.1.1', 443);
+
+// Max Example (With options)
+const tcpMax = await checkHost.tcp('1.1.1.1', 80, {
+    region: ['DE', 'JP'],
+    repeatchecks: 3,
+    timeout: 10
+});
+```
+
+#### UDP
+Sends UDP packets to a specified target and port.
+```javascript
+// Minimal Example (Target, Port)
+const udpMin = await checkHost.udp('1.1.1.1', 53);
+
+// Max Example (With custom hex payload and options)
+const udpMax = await checkHost.udp('1.1.1.1', 123, {
+    payload: '0b', // NTP Request Hex
+    region: ['EU'],
+    repeatchecks: 2,
+    timeout: 5
+});
+```
+
+#### HTTP
+Executes an HTTP/HTTPS request to the target to measure TTFB and latency.
+```javascript
+// Minimal Example
+const httpMin = await checkHost.http('https://check-host.cc');
+
+// Max Example (With options)
+const httpMax = await checkHost.http('https://check-host.cc', {
+    region: ['US', 'DE'],
+    repeatchecks: 3,
+    timeout: 10
+});
+```
+
+#### MTR
+Initiates an MTR (My Traceroute) diagnostic.
+```javascript
+// Minimal Example
+const mtrMin = await checkHost.mtr('1.1.1.1');
+
+// Max Example (With protocols, IP forced, and options)
+const mtrMax = await checkHost.mtr('1.1.1.1', {
+    repeatchecks: 15,
+    forceIPversion: 4,     // 4 or 6
+    forceProtocol: 'TCP',  // default is ICMP
+    region: ['EU', 'US']
+});
+```
+
+---
+
+### Fetching Results
+
+#### Report
+Fetches the compiled report and real-time statuses from a previously initiated monitoring check (Ping, TCP, HTTP, etc.) using its unique `uuid`. Wait 1-2 seconds after starting a check before polling.
+```javascript
+// The check UUID is returned by any monitoring method above
+const taskUuid = 'c0b4b0e3-aed7-4ae2-9f53-7bac879697cb';
+
+// Fetch the result payload
+const report = await checkHost.report(taskUuid);
+```
 
 ## License
 

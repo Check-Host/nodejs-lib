@@ -1,23 +1,30 @@
-const Client = require('./lib/Client');
+import Client from './lib/Client.js';
 
 // Import all method wrappers
-const infoMethod = require('./lib/methods/info');
-const whoisMethod = require('./lib/methods/whois');
-const pingMethod = require('./lib/methods/ping');
-const dnsMethod = require('./lib/methods/dns');
-const tcpMethod = require('./lib/methods/tcp');
-const udpMethod = require('./lib/methods/udp');
-const httpMethod = require('./lib/methods/http');
-const mtrMethod = require('./lib/methods/mtr');
-const locationsMethod = require('./lib/methods/locations');
-const reportMethod = require('./lib/methods/report');
-const myipMethod = require('./lib/methods/myip');
+import infoMethod from './lib/methods/info.js';
+import whoisMethod from './lib/methods/whois.js';
+import pingMethod from './lib/methods/ping.js';
+import dnsMethod from './lib/methods/dns.js';
+import tcpMethod from './lib/methods/tcp.js';
+import udpMethod from './lib/methods/udp.js';
+import httpMethod from './lib/methods/http.js';
+import mtrMethod from './lib/methods/mtr.js';
+import locationsMethod from './lib/methods/locations.js';
+import reportMethod from './lib/methods/report.js';
+import myipMethod from './lib/methods/myip.js';
 
-class CheckHost {
+/**
+ * Main CheckHost API Client Class.
+ */
+export default class CheckHost {
     /**
      * Initializes the Check-Host API client.
      * @param {Object} [options]
      * @param {string} [options.apikey] - Your API key for higher limits.
+     * 
+     * @example
+     * import CheckHost from 'check-host-api';
+     * const api = new CheckHost({ apikey: 'YOUR_API_KEY_HERE' });
      */
     constructor(options) {
         this.client = new Client(options);
@@ -100,5 +107,3 @@ class CheckHost {
         return myipMethod(this.client);
     }
 }
-
-module.exports = CheckHost;

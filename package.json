@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Node.js wrapper for the check-host.cc API",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "node test_run.js"
   },
