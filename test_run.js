@@ -2,8 +2,12 @@ import CheckHost from './index.js';
 
 async function runTests() {
     console.log('--- Instantiating CheckHost Client ---');
-    // We use no API key for testing public limits
-    const api = new CheckHost({ apikey: null });
+    // CI populates CHECK_HOST_API_KEY from a masked GitLab variable so the
+    // pipeline gets the higher per-key rate limit; locally we fall back to
+    // anonymous limits.
+    const apikey = process.env.CHECK_HOST_API_KEY || null;
+    if (apikey) console.log('(using API key from env)');
+    const api = new CheckHost({ apikey });
 
     try {
         console.log('\n--- Testing GET /locations ---');
