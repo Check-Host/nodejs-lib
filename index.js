@@ -12,6 +12,8 @@ import mtrMethod from './lib/methods/mtr.js';
 import locationsMethod from './lib/methods/locations.js';
 import reportMethod from './lib/methods/report.js';
 import myipMethod from './lib/methods/myip.js';
+import ogImageMethod from './lib/methods/og_image.js';
+import countryMapMethod from './lib/methods/country_map.js';
 
 /**
  * Main CheckHost API Client Class.
@@ -105,5 +107,26 @@ export default class CheckHost {
      */
     async myip() {
         return myipMethod(this.client);
+    }
+
+    /**
+     * Fetches the dynamic 1200x630 PNG status map for a check UUID.
+     * @param {string} uuid
+     * @returns {Promise<Uint8Array>} Raw PNG bytes.
+     */
+    async ogImage(uuid) {
+        return ogImageMethod(this.client, uuid);
+    }
+
+    /**
+     * Fetches the per-country world map for a check UUID.
+     * @param {string} uuid
+     * @param {Object} [options]
+     * @param {'svg'|'png'} [options.format='svg']
+     * @param {'low'|'med'|'high'} [options.resolution='med']
+     * @returns {Promise<Uint8Array>}
+     */
+    async countryMap(uuid, options) {
+        return countryMapMethod(this.client, uuid, options);
     }
 }
