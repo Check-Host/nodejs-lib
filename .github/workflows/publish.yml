@@ -15,8 +15,15 @@ name: Publish to npm
 
 on:
   push:
+    # Plain glob on purpose: the tags filter is not a regular expression,
+    # so a semver-looking pattern is a good way to match nothing at all.
+    # The version guard below is what actually rejects a bad tag.
     tags:
-      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v*"
+  # Fallbacks in case the mirrored tag push does not raise an event:
+  # cutting a GitHub Release, or dispatching the workflow by hand.
+  release:
+    types: [created]
   workflow_dispatch:
 
 permissions:
