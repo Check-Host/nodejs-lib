@@ -331,6 +331,14 @@ npm test           # offline unit tests (fetch stubbed, no network)
 npm run test:live  # live smoke test against the production API
 ```
 
+### Releasing
+
+Bump `version` in `package.json`, then push a matching `v*` tag. The tag
+mirrors to GitHub and triggers `.github/workflows/publish.yml`, which
+publishes through [npm Trusted Publishing](https://docs.npmjs.com/trusted-publishers)
+— an OIDC exchange, so no npm token is stored in GitHub or GitLab. The
+workflow refuses to publish if the tag and `package.json` disagree.
+
 ## License
 
 ISC License

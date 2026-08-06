@@ -1,20 +1,61 @@
 name: Publish to npm
 
+# Publishes via npm Trusted Publishing (OIDC). There is no NPM_TOKEN:
+# npm mints a short-lived credential from the OIDC token this workflow
+# requests, so nothing long-lived is stored in GitHub or GitLab.
+#
+# One-time setup on npmjs.com (Package > Settings > Trusted publisher):
+#   Organization or user : Check-Host
+#   Repository           : nodejs-lib
+#   Workflow filename    : publish.yml
+#   Allowed actions      : npm publish
+#
+# Releases are cut on GitLab; the push mirror replicates the tag here,
+# which is what triggers this workflow.
+
 on:
-  release:
-    types: [created]
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
   workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # required for OIDC — without it npm falls back to a token
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
-      - run: npm install
-      - run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # Trusted publishing needs Node >= 22.14.0.
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      # Node 22 ships npm 10.x; trusted publishing needs >= 11.5.1.
+      - name: Ensure npm supports trusted publishing
+        run: |
+          npm install -g npm@latest
+          npm --version
+
+      # A tag that disagrees with package.json would publish the wrong
+      # version under the right name. Fail loudly instead.
+      - name: Check the tag matches package.json
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG=$(node -p "require('./package.json').version")
+          echo "tag=$TAG package.json=$PKG"
+          if [ "$TAG" != "$PKG" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $PKG"
+            exit 1
+          fi
+
+      - name: Run the offline test suite
+        run: npm test
+
+      - name: Publish
+        run: npm publish --access public
