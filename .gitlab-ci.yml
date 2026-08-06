@@ -15,13 +15,28 @@ stages:
 default:
   image: node:20-alpine
 
+# Deterministic, offline unit tests - fetch is stubbed, so this job is
+# unaffected by API availability or rate limits.
 test:
   stage: test
   script:
     - node --version
-    - node test_run.js
+    - npm test
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG
+
+# Live smoke test against the production API. Exits non-zero on failure.
+# Allowed to fail so a transient API blip or rate limit doesn't block a
+# release, but it still shows up in the pipeline.
+test_live:
+  stage: test
+  script:
+    - node --version
+    - npm run test:live
+  allow_failure: true
+  rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     - if: $CI_COMMIT_TAG
 

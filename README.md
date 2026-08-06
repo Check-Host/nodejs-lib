@@ -12,7 +12,9 @@ Seamlessly integrate global network diagnostics into your backend. Perform remot
 
 - **Modern & Modular:** Native ES Modules (import / export) support. Every endpoint strategy lives in an isolated file, ensuring a clean architecture and easy debugging.
 
-- **Smart Authentication:** API Key auto-injection. Configure your key once during initialization, and the core SDK seamlessly handles all authentication payloads under the hood.
+- **Header-Based Authentication:** Configure your token once during initialization; the SDK attaches it as an `Authorization: Bearer` header to every request. The token never lands in a URL or a request body.
+
+- **Network Intelligence & Fullscan:** Passive IP / ASN / prefix / domain / certificate / port / software lookups, plus deep on-demand scans with a built-in polling helper.
 
 ## Requirements
 
@@ -31,12 +33,33 @@ npm i @check-hostcc/check-host-api
 ```javascript
 import CheckHost from '@check-hostcc/check-host-api';
 
-// Initialize the client. The API Key is optional.
-// Without an API key, standard public rate limits apply.
-//const checkHost = new CheckHost({ apikey: 'YOUR_API_KEY_HERE' });
-// Or leave empty: new CheckHost()
+// Initialize the client. The API token is optional.
+// Without a token, standard public rate limits apply.
+const checkHost = new CheckHost({ token: 'YOUR_API_TOKEN_UUID' });
+// Or leave empty for anonymous access: new CheckHost()
+```
+
+## Authentication
+
+The token is sent as an `Authorization: Bearer <token>` header on every
+request — GET, POST and binary alike. It is never placed in the query string
+or the request body, so it does not leak into access logs, referrer headers
+or browser history.
+
+```javascript
+// Explicit
+const checkHost = new CheckHost({ token: 'YOUR_API_TOKEN_UUID' });
+
+// Or from the environment (CHECK_HOST_API_TOKEN)
 const checkHost = new CheckHost();
 ```
+
+> **Migrating from 1.0.x:** the token used to travel in the JSON body as an
+> `apikey` field. That field is deprecated server-side. The
+> `new CheckHost({ apikey })` option still works but emits a
+> `DeprecationWarning` and will be removed in 2.0 — rename it to `token`.
+> The legacy `CHECK_HOST_API_KEY` environment variable is still read as a
+> fallback.
 
 ---
 
@@ -57,6 +80,13 @@ This library supports both minimal invocations and detailed, options-rich reques
 Returns the requesting client's public IPv4 or IPv6 address.
 ```javascript
 const ip = await checkHost.myip();
+```
+
+#### Get My Info
+Geolocation + ASN + privacy / abuse data for the caller's own IP. Subject to bot detection — repeated calls may return a 429 carrying a captcha URL.
+```javascript
+const me = await checkHost.myinfo();
+console.log(me.countryCode, me.city, me.asn?.name);
 ```
 
 #### Get Locations
@@ -182,6 +212,123 @@ const taskUuid = 'c0b4b0e3-aed7-4ae2-9f53-7bac879697cb';
 
 // Fetch the result payload
 const report = await checkHost.report(taskUuid);
+```
+
+---
+
+### Network Intelligence
+
+Passive lookups against the dataset behind the entity pages — no check is dispatched to the monitoring nodes, so results come back immediately. Every response carries a `data` section; keys we hold no data for come back as empty arrays or `null`.
+
+#### IP Profile
+Reverse DNS, open ports and banners, TLS certificates, BGP/ASN attribution, GeoIP, tech-stack, co-hosted domains, origin-leak candidates, threat-intel matches and honeypot activity.
+```javascript
+const intel = await checkHost.ipIntel('1.1.1.1');
+console.log(intel.data.bgp.as_name);                       // Cloudflare, Inc.
+console.log(intel.data.open_ports.map(p => p.port));       // [443, ...]
+```
+
+Honeypot passwords are never returned in cleartext — entries expose only `password_captured` (bool) and `password_len`.
+
+#### ASN Profile
+Prefix counts, announced IP totals, peers / providers / customers, IXP memberships, RPKI coverage, GeoIP footprint and hosted-domain summaries. Accepts `13335` or `'AS13335'`.
+```javascript
+const intel = await checkHost.asnIntel('AS13335');
+console.log(intel.data.prefix_count, intel.data.rpki_coverage_pct);
+```
+
+#### Prefix, Domain and Certificate
+```javascript
+const prefix = await checkHost.prefixIntel('1.1.1.0', 24);
+const domain = await checkHost.domainIntel('check-host.cc');
+const cert   = await checkHost.certIntel('3a1b8f0c…9f90');   // 64-char hex
+
+console.log(domain.data.subdomains);
+console.log(cert.data.served_by);
+```
+
+#### Port and Software Exposure
+```javascript
+const port = await checkHost.portIntel(443);
+console.log(port.well_known, port.data.open_ips);
+
+const nginx  = await checkHost.softwareIntel('nginx');            // all versions
+const pinned = await checkHost.softwareIntel('nginx', '1.24.0');  // one version
+```
+
+---
+
+### Fullscan
+
+A deep, on-demand multi-stage scan (ports + banners + TLS + DNS + threat-intel) of an IP, CIDR, domain or ASN. Asynchronous: submit, poll, then read the results. Budget minutes, not seconds.
+
+```javascript
+const job = await checkHost.fullscan('check-host.cc', { scope: 'deep' });
+console.log(job.uuid, job.status);          // ... pending
+
+// Block until the job reaches a terminal status (complete/partial/failed)
+const finished = await checkHost.waitForFullscan(job.uuid, { maxWait: 300000 });
+console.log(finished.status, `${finished.subjobs_done}/${finished.subjobs_total}`);
+
+const { data } = await checkHost.fullscanResults(job.uuid);
+for (const entry of data.open_ports) {
+  console.log(entry.port, entry.service);
+}
+```
+
+Scopes: `basic` (top-100 ports + banner), `deep` (default — full port range, TLS, body and threat-intel), `full` (deep plus subdomain enumeration; domains only).
+
+Anonymous CIDR submissions are capped at `/24` (v4) and `/120` (v6); an API token raises that to `/20` and `/112`.
+
+Before dispatching a scan, check whether a recent one already exists:
+```javascript
+const { recent_scans } = await checkHost.recentScans('check-host.cc');
+const reusable = recent_scans.find(s => s.status === 'complete');
+if (reusable) {
+  const { data } = await checkHost.fullscanResults(reusable.uuid);
+}
+```
+
+For manual polling loops, `fullscanStatus(uuid)` returns `{ success, job }`.
+
+---
+
+## API surface
+
+| Method | Endpoint |
+|---|---|
+| `myip()` | `GET /myip` |
+| `myinfo()` | `GET /myinfo` |
+| `locations()` | `GET /locations` |
+| `info(target)` | `POST /info` |
+| `whois(target)` | `POST /whois` |
+| `ping(target, options)` | `POST /ping` |
+| `dns(target, options)` | `POST /dns` |
+| `tcp(target, port, options)` | `POST /tcp` |
+| `udp(target, port, options)` | `POST /udp` |
+| `http(target, options)` | `POST /http` |
+| `mtr(target, options)` | `POST /mtr` |
+| `report(uuid)` | `GET /report/{uuid}` |
+| `ogImage(uuid)` | `GET /report/{uuid}/og-image` |
+| `countryMap(uuid, options)` | `GET /report/{uuid}/country-map` |
+| `ipIntel(ip)` | `GET /ip/{ip}` |
+| `asnIntel(asn)` | `GET /as/{asn}` |
+| `prefixIntel(net, mask)` | `GET /prefix/{net}/{mask}` |
+| `domainIntel(domain)` | `GET /domain/{domain}` |
+| `certIntel(sha256)` | `GET /cert/{sha256}` |
+| `portIntel(port)` | `GET /port/{port}` |
+| `softwareIntel(name, version?)` | `GET /software/{name}[/{version}]` |
+| `recentScans(target)` | `GET /scan/{target}` |
+| `fullscan(target, options)` | `POST /fullscan` |
+| `fullscanStatus(uuid)` | `GET /fullscan/{uuid}` |
+| `fullscanResults(uuid)` | `GET /fullscan/{uuid}/results` |
+| `waitForFullscan(uuid, options)` | polls `GET /fullscan/{uuid}` |
+
+## Development
+
+```bash
+npm test           # offline unit tests (fetch stubbed, no network)
+npm run test:live  # live smoke test against the production API
 ```
 
 ## License

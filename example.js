@@ -1,8 +1,9 @@
 import CheckHost from '@check-hostcc/check-host-api';
 
-// Initialize the API wrapper. 
-// You can optionally pass your API key here to bump your rate limits.
-// Example: const api = new CheckHost({ apikey: 'YOUR_API_KEY' });
+// Initialize the API wrapper.
+// You can optionally pass your API token here to bump your rate limits; it
+// is sent as an Authorization: Bearer header.
+// Example: const api = new CheckHost({ token: 'YOUR_API_TOKEN_UUID' });
 const api = new CheckHost();
 
 async function runExamples() {
@@ -35,6 +36,17 @@ async function runExamples() {
         console.log('--- Results Snippet ---');
         // We print just a snippet of the potentially massive JSON response
         console.log(JSON.stringify(reportResult, null, 2).substring(0, 300) + '\n... (truncated)');
+
+        // 4. Passive Network Intelligence - no check dispatched, instant result
+        console.log('\n4. Looking up intelligence for 1.1.1.1...');
+        const intel = await api.ipIntel('1.1.1.1');
+        const bgp = intel.data.bgp || {};
+        console.log(`AS${bgp.asn} ${bgp.as_name} (${bgp.prefix}), RPKI ${bgp.rpki_status}`);
+
+        // 5. Port exposure across the scanned Internet
+        console.log('\n5. Checking how widespread port 443 is...');
+        const port = await api.portIntel(443);
+        console.log(`${port.well_known}: ${port.data.open_ips} open IPs worldwide`);
 
         console.log('\nDemonstration complete!');
 
