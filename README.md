@@ -70,7 +70,7 @@ This library supports both minimal invocations and detailed, options-rich reques
 ### Common Options Used in Examples
 - `region`: Array of Nodes or ISO Country Codes (e.g. `['DE', 'NL']`) or Continents (e.g. `['EU']`).
 - `repeatchecks`: Number of repeated probes to perform per node for higher accuracy (Live Check).
-- `timeout`: Connection timeout threshold in seconds (Currently disabled on Check-host backend, but supported).
+- `timeout`: Per-check timeout in **milliseconds** (100–30000). Optional; each check type has its own default (ping/tcp 1000, udp 2000, dns 5000, http 15000, mtr 1000). A value below 100 is read as seconds and converted, so older code that passed `timeout: 15` still works — but new code should pass milliseconds.
 
 ---
 
@@ -125,7 +125,7 @@ const pingMin = await checkHost.ping('8.8.8.8');
 const pingMax = await checkHost.ping('8.8.8.8', {
     region: ['DE', 'NL'],
     repeatchecks: 5,
-    timeout: 5
+    timeout: 5000
 });
 ```
 
@@ -152,7 +152,7 @@ const tcpMin = await checkHost.tcp('1.1.1.1', 443);
 const tcpMax = await checkHost.tcp('1.1.1.1', 80, {
     region: ['DE', 'NL'],
     repeatchecks: 3,
-    timeout: 10
+    timeout: 10000
 });
 ```
 
@@ -167,7 +167,7 @@ const udpMax = await checkHost.udp('1.1.1.1', 123, {
     payload: '0b', // NTP Request Hex
     region: ['EU'],
     repeatchecks: 2,
-    timeout: 5
+    timeout: 5000
 });
 ```
 
@@ -181,7 +181,7 @@ const httpMin = await checkHost.http('https://check-host.cc');
 const httpMax = await checkHost.http('https://check-host.cc', {
     region: ['US', 'DE'],
     repeatchecks: 3,
-    timeout: 10
+    timeout: 10000
 });
 ```
 
